@@ -8,10 +8,560 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Mayhem w Stoczni</title>
+		<title>Mayhem w Stoczni — arena pojedynków</title>
 	</head>
 	<body>
-		<h1>Mayhem w Stoczni</h1>
-		<p>Witaj w Mayhem w Stoczni! Czas zbudować arenę pojedynków na kontrybucje z GitHuba.</p>
+		<main>
+			<h1>Mayhem w Stoczni</h1>
+			<p>Arena pojedynków na kontrybucje z GitHuba</p>
+
+			<form id="duel-form">
+				<div class="players">
+					<div class="player">
+						<label for="player-1">Gracz 1</label>
+						<div class="player-input">
+							<input
+								id="player-1"
+								name="player1"
+								type="text"
+								autocomplete="username"
+								maxlength="39"
+								required
+							/>
+							<button type="button" class="randomize" data-player="player-1">
+								Losuj
+							</button>
+						</div>
+					</div>
+
+					<div class="player">
+						<label for="player-2">Gracz 2</label>
+						<div class="player-input">
+							<input
+								id="player-2"
+								name="player2"
+								type="text"
+								autocomplete="username"
+								maxlength="39"
+								required
+							/>
+							<button type="button" class="randomize" data-player="player-2">
+								Losuj
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<button id="fight-button" type="submit">Walcz!</button>
+			</form>
+
+			<section id="results">
+				<p id="result-message" role="status" aria-live="polite">
+					Wpisz nazwy graczy i rozpocznij walkę.
+				</p>
+				<div id="duel-content" hidden>
+					<div class="duel-cards">
+						<article id="player-result-1" class="result-card"></article>
+						<div class="versus" aria-label="kontra">VS</div>
+						<article id="player-result-2" class="result-card"></article>
+					</div>
+					<p id="winner-message" class="winner-message"></p>
+				</div>
+			</section>
+		</main>
 	</body>
 </html>
+
+<style>
+	:root {
+		font-family: Arial, sans-serif;
+		color: #202124;
+		background: #f3f5f7;
+	}
+
+	body {
+		margin: 0;
+	}
+
+	main {
+		box-sizing: border-box;
+		width: min(100% - 2rem, 42rem);
+		margin: 4rem auto;
+		padding: 2rem;
+		background: white;
+		border: 1px solid #d8dde3;
+		border-radius: 0.75rem;
+	}
+
+	h1 {
+		margin-top: 0;
+	}
+
+	.players {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+		margin: 2rem 0 1.5rem;
+	}
+
+	.player label {
+		display: block;
+		margin-bottom: 0.5rem;
+		font-weight: 700;
+	}
+
+	.player-input {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	input {
+		box-sizing: border-box;
+		width: 100%;
+		min-width: 0;
+		padding: 0.65rem;
+		border: 1px solid #8b949e;
+		border-radius: 0.35rem;
+		font: inherit;
+	}
+
+	button {
+		padding: 0.65rem 1rem;
+		border: 0;
+		border-radius: 0.35rem;
+		background: #165d3b;
+		color: white;
+		font: inherit;
+		font-weight: 700;
+		cursor: pointer;
+	}
+
+	button:disabled {
+		cursor: wait;
+		opacity: 0.65;
+	}
+
+	.randomize {
+		background: #e8edf0;
+		color: #202124;
+	}
+
+	#fight-button {
+		width: 100%;
+	}
+
+	#results {
+		margin-top: 2rem;
+	}
+
+	#result-message {
+		margin: 0;
+		white-space: pre-line;
+	}
+
+	#duel-content {
+		margin-top: 1rem;
+	}
+
+	.duel-cards {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.result-card {
+		min-width: 0;
+		padding: 1rem;
+		background: #f3f5f7;
+		border-radius: 0.5rem;
+	}
+
+	.result-card h2 {
+		margin: 0 0 0.35rem;
+		font-size: 1.15rem;
+	}
+
+	.contribution-total,
+	.date-range {
+		margin: 0.35rem 0;
+	}
+
+	.contribution-grid-scroll {
+		overflow-x: auto;
+		margin-top: 1rem;
+		padding-bottom: 0.25rem;
+	}
+
+	.contribution-grid {
+		display: grid;
+		grid-auto-columns: 0.65rem;
+		grid-auto-flow: column;
+		grid-template-rows: repeat(7, 0.65rem);
+		gap: 0.2rem;
+		width: max-content;
+	}
+
+	.contribution-day {
+		width: 0.65rem;
+		height: 0.65rem;
+		border-radius: 0.15rem;
+	}
+
+	.empty-day {
+		visibility: hidden;
+	}
+
+	.versus {
+		display: grid;
+		width: 2.5rem;
+		height: 2.5rem;
+		place-items: center;
+		border-radius: 50%;
+		background: #165d3b;
+		color: white;
+		font-weight: 700;
+	}
+
+	.winner-message {
+		margin: 1rem 0 0;
+		font-weight: 700;
+	}
+
+	@media (max-width: 36rem) {
+		main {
+			margin: 1rem auto;
+			padding: 1.25rem;
+		}
+
+		.players {
+			grid-template-columns: 1fr;
+		}
+
+		.duel-cards {
+			grid-template-columns: 1fr;
+		}
+
+		.versus {
+			justify-self: center;
+		}
+	}
+</style>
+
+<script>
+	interface ContributionDay {
+		count: number;
+		level: number;
+		weekday: number;
+	}
+
+	interface ContributionWeek {
+		contribution_days: ContributionDay[];
+		first_day: string;
+		index: number;
+	}
+
+	interface ContributionsResponse {
+		colors_full: string[];
+		from: string;
+		to: string;
+		total_contributions: number;
+		weeks: ContributionWeek[];
+	}
+
+	const popularGitHubUsernames = [
+		'torvalds',
+		'gaearon',
+		'yyx990803',
+		'sindresorhus',
+		'tj',
+		'antfu',
+		'karpathy',
+		'mojombo',
+		'JakeWharton',
+		'jaredpalmer',
+	];
+
+	const form = document.querySelector<HTMLFormElement>('#duel-form');
+	const fightButton = document.querySelector<HTMLButtonElement>('#fight-button');
+	const resultMessage = document.querySelector<HTMLParagraphElement>('#result-message');
+	const duelContent = document.querySelector<HTMLDivElement>('#duel-content');
+	const winnerMessage = document.querySelector<HTMLParagraphElement>('#winner-message');
+	const playerResult1 = document.querySelector<HTMLElement>('#player-result-1');
+	const playerResult2 = document.querySelector<HTMLElement>('#player-result-2');
+
+	if (
+		!form ||
+		!fightButton ||
+		!resultMessage ||
+		!duelContent ||
+		!winnerMessage ||
+		!playerResult1 ||
+		!playerResult2
+	) {
+		throw new Error('Nie udało się zainicjalizować formularza pojedynku.');
+	}
+
+	document.querySelectorAll<HTMLButtonElement>('.randomize').forEach((button) => {
+		button.addEventListener('click', () => {
+			const inputId = button.dataset.player;
+			const input = inputId
+				? document.getElementById(inputId)
+				: null;
+
+			if (!(input instanceof HTMLInputElement)) {
+				throw new Error('Nie znaleziono pola gracza do wylosowania.');
+			}
+
+			const username =
+				popularGitHubUsernames[Math.floor(Math.random() * popularGitHubUsernames.length)];
+			input.value = username;
+			button.setAttribute(
+				'aria-label',
+				`Wylosuj innego użytkownika GitHuba. Wpisano ${username}.`,
+			);
+		});
+	});
+
+	function isRecord(value: unknown): value is Record<string, unknown> {
+		return typeof value === 'object' && value !== null;
+	}
+
+	function parseContributions(data: unknown): ContributionsResponse {
+		if (!isRecord(data) || !Array.isArray(data.weeks) || !Array.isArray(data.colors_full)) {
+			throw new Error('Serwer zwrócił nieprawidłowe dane o kontrybucjach.');
+		}
+		if (
+			typeof data.from !== 'string' ||
+			typeof data.to !== 'string' ||
+			!Number.isSafeInteger(data.total_contributions) ||
+			(data.total_contributions as number) < 0 ||
+			!data.colors_full.every((color) => typeof color === 'string' && /^#[\da-f]{6}$/i.test(color)) ||
+			data.colors_full.length < 5
+		) {
+			throw new Error('Serwer zwrócił nieprawidłowe dane o kontrybucjach.');
+		}
+
+		const weeks: ContributionWeek[] = data.weeks.map((week): ContributionWeek => {
+			if (
+				!isRecord(week) ||
+				!Number.isInteger(week.index) ||
+				typeof week.first_day !== 'string' ||
+				!Array.isArray(week.contribution_days)
+			) {
+				throw new Error('Serwer zwrócił nieprawidłowy wykres kontrybucji.');
+			}
+
+			const contributionDays: ContributionDay[] = week.contribution_days.map(
+				(day): ContributionDay => {
+					if (
+						!isRecord(day) ||
+						!Number.isSafeInteger(day.count) ||
+						(day.count as number) < 0 ||
+						!Number.isInteger(day.level) ||
+						(day.level as number) < 0 ||
+						(day.level as number) > 4 ||
+						!Number.isInteger(day.weekday) ||
+						(day.weekday as number) < 0 ||
+						(day.weekday as number) > 6
+					) {
+						throw new Error('Serwer zwrócił nieprawidłowy dzień na wykresie.');
+					}
+
+					return {
+						count: day.count as number,
+						level: day.level as number,
+						weekday: day.weekday as number,
+					};
+				},
+			);
+
+			return {
+				contribution_days: contributionDays,
+				first_day: week.first_day,
+				index: week.index as number,
+			};
+		});
+
+		return {
+			colors_full: data.colors_full as string[],
+			from: data.from,
+			to: data.to,
+			total_contributions: data.total_contributions as number,
+			weeks,
+		};
+	}
+
+	function formatContributionCount(count: number): string {
+		const lastDigit = count % 10;
+		const lastTwoDigits = count % 100;
+		const noun =
+			count === 1
+				? 'kontrybucja'
+				: lastDigit >= 2 &&
+					  lastDigit <= 4 &&
+					  (lastTwoDigits < 12 || lastTwoDigits > 14)
+					? 'kontrybucje'
+					: 'kontrybucji';
+
+		return `${new Intl.NumberFormat('pl-PL').format(count)} ${noun}`;
+	}
+
+	async function loadContributions(username: string): Promise<ContributionsResponse> {
+		let response: Response;
+		try {
+			response = await fetch(`/api/contributions/${encodeURIComponent(username)}`);
+		} catch {
+			throw new Error('Nie udało się połączyć z serwerem. Sprawdź połączenie i spróbuj ponownie.');
+		}
+
+		if (!response.ok) {
+			if (response.status === 404) {
+				throw new Error(`Nie znaleziono użytkownika „${username}”.`);
+			}
+			if (response.status === 400) {
+				throw new Error(`Nazwa „${username}” jest nieprawidłowa.`);
+			}
+			if (response.status === 503) {
+				throw new Error('GitHub ograniczył liczbę zapytań. Spróbuj ponownie później.');
+			}
+			if (response.status === 504) {
+				throw new Error('GitHub nie odpowiedział na czas. Spróbuj ponownie.');
+			}
+			throw new Error(`Nie udało się pobrać danych użytkownika „${username}”.`);
+		}
+
+		try {
+			return parseContributions(await response.json());
+		} catch {
+			throw new Error('Serwer zwrócił nieprawidłowe dane o kontrybucjach.');
+		}
+	}
+
+	function formatDate(date: string): string {
+		const parsed = new Date(`${date}T00:00:00Z`);
+		if (Number.isNaN(parsed.getTime())) {
+			throw new Error('Serwer zwrócił nieprawidłowy zakres dat.');
+		}
+
+		return new Intl.DateTimeFormat('pl-PL', {
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric',
+			timeZone: 'UTC',
+		}).format(parsed);
+	}
+
+	function createContributionGrid(data: ContributionsResponse, username: string): HTMLElement {
+		const scrollContainer = document.createElement('div');
+		scrollContainer.className = 'contribution-grid-scroll';
+
+		const grid = document.createElement('div');
+		grid.className = 'contribution-grid';
+		grid.setAttribute('role', 'img');
+		grid.setAttribute(
+			'aria-label',
+			`Wykres kontrybucji użytkownika ${username}: ${formatContributionCount(data.total_contributions)} od ${formatDate(data.from)} do ${formatDate(data.to)}.`,
+		);
+
+		for (const week of data.weeks) {
+			const daysByWeekday = new Map(
+				week.contribution_days.map((day) => [day.weekday, day]),
+			);
+
+			for (let weekday = 0; weekday < 7; weekday += 1) {
+				const cell = document.createElement('span');
+				const day = daysByWeekday.get(weekday);
+				if (!day) {
+					cell.className = 'contribution-day empty-day';
+					cell.setAttribute('aria-hidden', 'true');
+				} else {
+					cell.className = 'contribution-day';
+					cell.style.backgroundColor = data.colors_full[day.level];
+					const date = new Date(
+						new Date(`${week.first_day}T00:00:00Z`).getTime() +
+							day.weekday * 24 * 60 * 60 * 1000,
+					)
+						.toISOString()
+						.slice(0, 10);
+					cell.title = `${formatDate(date)}: ${formatContributionCount(day.count)}`;
+					cell.setAttribute('aria-hidden', 'true');
+				}
+				grid.append(cell);
+			}
+		}
+
+		scrollContainer.append(grid);
+		return scrollContainer;
+	}
+
+	function renderPlayerResult(
+		container: HTMLElement,
+		playerNumber: number,
+		username: string,
+		data: ContributionsResponse,
+	): void {
+		const heading = document.createElement('h2');
+		heading.textContent = `Gracz ${playerNumber} — @${username}`;
+
+		const total = document.createElement('p');
+		total.className = 'contribution-total';
+		total.textContent = formatContributionCount(data.total_contributions);
+
+		const range = document.createElement('p');
+		range.className = 'date-range';
+		range.textContent = `Zakres: ${formatDate(data.from)}–${formatDate(data.to)}`;
+
+		container.replaceChildren(
+			heading,
+			total,
+			range,
+			createContributionGrid(data, username),
+		);
+	}
+
+	form.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		const formData = new FormData(form);
+		const player1 = String(formData.get('player1')).trim();
+		const player2 = String(formData.get('player2')).trim();
+		if (!player1 || !player2) {
+			resultMessage.textContent = 'Wpisz nazwy użytkowników obu graczy.';
+			const firstEmptyInput = !player1 ? '#player-1' : '#player-2';
+			form.querySelector<HTMLInputElement>(firstEmptyInput)?.focus();
+			return;
+		}
+		if (!form.reportValidity()) return;
+
+		duelContent.hidden = true;
+		fightButton.disabled = true;
+		resultMessage.textContent = 'Pobieranie danych zawodników i wykresów…';
+
+		try {
+			const [data1, data2] = await Promise.all([
+				loadContributions(player1),
+				loadContributions(player2),
+			]);
+			renderPlayerResult(playerResult1, 1, player1, data1);
+			renderPlayerResult(playerResult2, 2, player2, data2);
+
+			winnerMessage.textContent =
+				data1.total_contributions > data2.total_contributions
+					? `Zwycięża Gracz 1 — @${player1}!`
+					: data2.total_contributions > data1.total_contributions
+						? `Zwycięża Gracz 2 — @${player2}!`
+						: 'Remis!';
+
+			resultMessage.textContent = '';
+			duelContent.hidden = false;
+		} catch (error) {
+			duelContent.hidden = true;
+			resultMessage.textContent =
+				error instanceof Error
+					? error.message
+					: 'Wystąpił nieoczekiwany błąd podczas pojedynku.';
+		} finally {
+			fightButton.disabled = false;
+		}
+	});
+</script>
